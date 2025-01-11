@@ -25,12 +25,18 @@ ups_data_frame = ups_data_frame.with_columns(
 
 ups_data_frame = ups_data_frame.rename({"column_1": "Date", "column_2": "Time","column_4": "Voltage"})
 
+dates = ups_data_frame.unique(subset="Date", maintain_order=True)
+num_dates = dates.height
 
-print(ups_data_frame.unique(subset="Date", maintain_order=True))
-print(ups_data_frame.filter(polars.col("Date") == polars.lit("2025-01-04").str.to_date()))
+for i in range(num_dates):
+    ups_data_frame_day = ups_data_frame.filter(polars.col("Date") == dates.item(i, 0))
 
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
-ax.plot(ups_data_frame["Voltage"])
+    fig = plt.figure(i)
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.plot(ups_data_frame_day["Voltage"])
+    ax1.set_xlabel('Time')
+    ax1.set_ylabel('Voltage [V]')
+    ax1.set_title('Mains voltage on ' + str(dates.item(i, 0)))
+
 plt.show()
 
