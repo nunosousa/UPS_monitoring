@@ -1,5 +1,53 @@
-# TelescopeMirrorTester
-This is an application intended to provide useful tools to perform Foucault or Wire testing on reflective telescope mirrors
+# UPS data log analysis
+This repository contains a set of scripts created to help me analysis the stability of the electrical power that feeds my home.
+
+I have a generic UPS from which data is retrieved trough the available USP connection.
+
+The data link is managed with the Network UPS Tools (NUT) and the data is analyzed in python.
+
+## Notes on setting up Network UPS Tools
+
+First install NUT:
+```
+apt install nut
+
+```
+
+Configure the file /etc/nut/nut.conf with:
+```
+MODE=standalone
+```
+
+Append the following entry to the file /etc/nut/ups.conf:
+```
+[EuroTech]
+    driver = nutdrv_qx
+    desc = "EuroTech 640VA UPS"
+    port = "auto"
+    vendorid = 0001
+    productid = 0000
+    bus = 001
+    novendor
+    norating
+    noscanlangid
+    protocol = hunnox
+    langid_fix = "0x0409"
+
+```
+Note: Info retrieved from https://networkupstools.org/ddl/Powercool/650VA.html.
+
+Run the following command to start the NUT server and peek the UPS's current values:
+```
+systemctl enable --now nut-server
+
+upsc EuroTech@localhost
+```
+
+If everything is configured properly, run the following command log the selected UPS parameters to a file:
+```
+upslog -s EuroTech@localhost -i 1 -l /home/nunosousa/upslog.txt
+
+```
 
 ## Notes on setting up the Python virtual environment
 
