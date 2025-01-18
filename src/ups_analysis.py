@@ -6,6 +6,23 @@ import matplotlib.dates as mdates
 # %TIME @Y@m@d @H@M@S% %VAR battery.charge% %VAR input.voltage% %VAR ups.load% [%VAR ups.status%] %VAR ups.temperature% %VAR input.frequency%
 # 20250109 180822 NA 222.0 2 [OL BYPASS] 29.0 50.0
 
+# ups.status values:
+# OL      -- On line (mains is present)
+# OB      -- On battery (mains is not present)
+# LB      -- Low battery
+# HB      -- High battery
+# RB      -- The battery needs to be replaced
+# CHRG    -- The battery is charging
+# DISCHRG -- The battery is discharging (inverter is providing load power)
+# BYPASS  -- UPS bypass circuit is active -- no battery protection is available
+# CAL     -- UPS is currently performing runtime calibration (on battery)
+# OFF     -- UPS is offline and is not supplying power to the load
+# OVER    -- UPS is overloaded
+# TRIM    -- UPS is trimming incoming voltage (called "buck" in some hardware)
+# BOOST   -- UPS is boosting incoming voltage
+# FSD     -- Forced Shutdown (restricted use, see the note below)
+
+
 ups_data_frame = polars.read_csv(
     "dataset/upslog.txt",
     infer_schema=False,
@@ -52,7 +69,6 @@ for i in range(num_dates):
 
     ax1 = fig.add_subplot(2, 1, 1)
 
-    #ax1.plot(ups_data_frame_day["Voltage"], label='Voltage')
     ax1.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["Voltage"], label='Voltage')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
     ax1.set_ylim(top=cei38_high+4, bottom=cei38_low-4)
