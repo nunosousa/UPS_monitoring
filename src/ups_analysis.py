@@ -77,6 +77,7 @@ for i in range(num_dates):
     fig = plt.figure("EuroTech SMART UPS 640VA [" + str(dates.item(i, "Date")) + "]")
 
 
+    #Plot the input and output voltage
     ax1 = fig.add_subplot(2, 1, 1)
 
     ax1.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["input.voltage"], label='Input')
@@ -92,10 +93,19 @@ for i in range(num_dates):
     ax1.plot(x_cei38, y_low_cei38, '-.', label='CEI 38-2003+ 207V')
     ax1.legend(loc="best")
 
-
+    #Plot the battery charge and load
     ax2 = fig.add_subplot(2, 1, 2)
 
+    ax2.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["battery.voltage"], label='Battery (V)')
+    ax2.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["input.frequency"], label='Input frequency (Hz)')
+    ax2.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["ups.temperature"], label='Temperature (ºC)')
+    ax2.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["ups.load"], label='Load (%)')
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+    ax2.set_xlim(left=x_cei38[0], right=x_cei38[1])
     ax2.set_xlabel('Time')
+    ax2.set_title('UPS status on ' + str(dates.item(i, "Date")))
+
+    ax2.legend(loc="best")
 
 plt.show()
 
