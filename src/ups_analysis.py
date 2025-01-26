@@ -1,4 +1,5 @@
 import polars
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
@@ -22,60 +23,70 @@ import matplotlib.dates as mdates
 # BOOST   -- UPS is boosting incoming voltage
 # FSD     -- Forced Shutdown (restricted use, see the note below)
 
-
 ups_data_frame = polars.read_csv(
     "dataset/upslog.txt",
-    infer_schema=False,
+    infer_schema=True,
     has_header=False,
     separator=" ",
     decimal_comma=False,
-    columns=[0, 1, 3],
-    quote_char="\"")
+    columns=[0, 3, 4, 5, 6, 7, 8, 9, 10],
+    quote_char="%")
+
+ups_data_frame = ups_data_frame.rename({"column_1": "DateTime",
+                                        #"column_2": "Date",
+                                        #"column_3": "Time",
+                                        "column_4": "battery.voltage",
+                                        "column_5": "input.frequency",
+                                        "column_6": "input.voltage",
+                                        "column_7": "input.voltage.fault",
+                                        "column_8": "output.voltage",
+                                        "column_9": "ups.load",
+                                        "column_10": "ups.status",
+                                        "column_11": "ups.temperature"})
 
 #Convert the first column to a date format
 ups_data_frame = ups_data_frame.with_columns(
-    polars.col("column_1").cast(polars.String).str.to_date("%Y%m%d"))
+    polars.from_epoch(polars.col("DateTime"), time_unit="s"))
 
 ups_data_frame = ups_data_frame.with_columns(
-    polars.col("column_2").cast(polars.String).str.to_time("%H%M%S"))
+    polars.col("DateTime").dt.date().alias("Date"))
+    #polars.col("Date").cast(polars.String).str.to_date("%Y%m%d"))
 
 ups_data_frame = ups_data_frame.with_columns(
-    polars.col("column_4").cast(polars.Float32))
+    polars.col("DateTime").dt.time().alias("Time"))
+    #polars.col("Time").cast(polars.String).str.to_time("%H%M%S"))
 
-ups_data_frame = ups_data_frame.with_columns(
-    polars.col("column_1").dt.combine(polars.col("column_2")).alias("DateTime"))
+print(ups_data_frame)
 
-ups_data_frame = ups_data_frame.rename({"column_1": "Date", "column_2": "Time","column_4": "Voltage"})
-
+#Determine the unique dates in the dataset
 dates = ups_data_frame.unique(subset="Date", maintain_order=True)
 num_dates = dates.height
 
+# Norma CEI 38 2003+
+# 230 V -10% +6% (entre 207V e 243,8V)
+cei38_high = 243.8
+cei38_low = 207.0
 
 for i in range(num_dates):
-    ups_data_frame_day = ups_data_frame.filter(polars.col("Date") == dates.item(i, 0))
-    #print(ups_data_frame_day)
-
-    # Norma CEI 38 2003+
-    # 230 V -10% +6% (entre 207V e 243,8V)
-    cei38_high = 243.8
-    cei38_low = 207.0
+    ups_data_frame_day = ups_data_frame.filter(polars.col("Date") == dates.item(i, "Date"))
 
     x_cei38 = [ups_data_frame_day["DateTime"].item(0), ups_data_frame_day["DateTime"].item(ups_data_frame_day.height-1)]
     y_high_cei38 = [cei38_high, cei38_high]
     y_low_cei38 = [cei38_low, cei38_low]
 
-    fig = plt.figure("EuroTech SMART UPS 640VA [" + str(dates.item(i, 0)) + "]")
+    fig = plt.figure("EuroTech SMART UPS 640VA [" + str(dates.item(i, "Date")) + "]")
 
 
     ax1 = fig.add_subplot(2, 1, 1)
 
-    ax1.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["Voltage"], label='Voltage')
+    ax1.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["input.voltage"], label='Input')
+    ax1.plot(ups_data_frame_day["DateTime"], ups_data_frame_day["output.voltage"], label='Output')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
     ax1.set_ylim(top=cei38_high+4, bottom=cei38_low-4)
     ax1.set_xlim(left=x_cei38[0], right=x_cei38[1])
     ax1.set_xlabel('Time')
     ax1.set_ylabel('Voltage [V]')
-    ax1.set_title('Mains voltage on ' + str(dates.item(i, 0)))
+    ax1.set_title('Mains voltage on ' + str(dates.item(i, "Date")))
 
     ax1.plot(x_cei38, y_high_cei38, '-.', label='CEI 38-2003+ 243.8V')
     ax1.plot(x_cei38, y_low_cei38, '-.', label='CEI 38-2003+ 207V')
