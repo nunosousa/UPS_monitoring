@@ -36,9 +36,13 @@ Append the following entry to the file /etc/nut/ups.conf:
 ```
 Note: Info retrieved from https://networkupstools.org/ddl/Powercool/650VA.html.
 
-Run the following command to start the NUT server and peek the UPS's current values:
+Check if some changes are required to /etc/nut/upsmon.conf and /etc/nut/upsd.conf.
+
+Run the following commands to start the NUT server and peek the UPS's current values:
 ```
-systemctl enable --now nut-server
+sudo systemctl enable --now nut-server
+
+sudo systemctl restart --now nut-monitor
 
 upsc EuroTech@localhost
 ```
@@ -46,7 +50,7 @@ upsc EuroTech@localhost
 If everything is configured properly, run the following command log the selected UPS parameters to a file:
 ```
 upslog -s EuroTech@localhost -i 1 -l /home/nunosousa/upslog.txt
-
+upslog -s EuroTech@localhost -f "%ETIME% %TIME @Y@m@d @H@M@S% %VAR battery.voltage% %VAR input.frequency% %VAR input.voltage% %VAR input.voltage.fault% %VAR output.voltage% %VAR ups.load% %% %VAR ups.status% %% %VAR ups.temperature%" -i 1 -l /home/nunosousa/upslog.txt
 ```
 
 ## Notes on setting up the Python virtual environment
